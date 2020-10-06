@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<script type="text/javascript" src="script/mqttws31.js"></script>
+        <head>
+                <title>Moving_Circle_IDs</title>
+                <style>
+                canvas {
+                  border: 1px solid red;
+                  background:  white;
+                }
+                </style>
+        </head>
+        <body>
+        <canvas id='cvs1' width="1000" height="1000" style="background-image: url('map.jpg');" ></canvas>
+
+                <script>
+                        var arc = new Circle(350,350, 10, degToRad(0), degToRad(360), false);
+                        var fillText = new words('0',300,300);
+                        var canvas = document.getElementById('cvs');
+                        var ctx1 = canvas.getContext('2d');
+                        var fillText1 = new words1('0',300,300);
+
+                                          
+                        function degToRad(degrees) {
+									           return degrees * Math.PI / 180;
+									      };
+									       
+                        function Stage (ctx1) {
+                                this.ctx1 = ctx1;
+                                this.displayObjects = [];
+                        }
+
+
+                        Stage.prototype.add = function (displayObject) {
+                                this.displayObjects.push(displayObject);
+                        };
+
+                        Stage.prototype.render = function () {
+                                var displayObjects = this.displayObjects;
+                         				var ctx1 = this.ctx1;
+                          
+                               	function loop () {
+			                            ctx1.clearRect(0, 0, 1000, 1000);
+			                            displayObjects.forEach(function (displayObject) {
+			                              displayObject.update(ctx1);
+			                            });
+			                            requestAnimationFrame(loop);
+			                          }
+                          
+                                loop();
+                        };
+
+
+                        function words (q,x, y) {
+                                this.q = q;
+                                this.x = x;
+                          			this.y = y;                            
+                        }
+
+                        function Circle (x, y) {
+                                this.x = x;
+                          			this.y = y;
+                        }
+                        words1.prototype.update = function (ctx) {
+                                ctx.fillText1(this.c,this.a,this.b);
+                                ctx.font = '25px Arial';
+                          			ctx.textAlign = 'center';
+                								ctx.textBaseline = 'middle';
+               									ctx.fillStyle = 'blue';
+                        };
+
+                        words.prototype.update = function (ctx1) {
+                                ctx1.fillText(this.q,this.x,this.y);
+                                ctx1.font = '25px Arial';
+                          			ctx1.textAlign = 'center';
+                								ctx1.textBaseline = 'middle';
+               									ctx1.fillStyle = 'blue';
+                        };
+
+                        Circle.prototype.update = function (ctx1) {
+                                ctx1.beginPath();
+                                ctx1.arc(this.x,this.y,5,degToRad(0), degToRad(360), false);
+                                ctx1.strokeStyle = 'red';
+                                ctx1.lineWidth = 5;
+                                ctx1.stroke();
+                                ctx1.closePath();
+                        };
+
+                        var hostname = "10.0.3.147", //"22433a14n1.51mypc.cn"
+                                        port = 9001,
+                                        clientId = new Date().getTime().toString(),
+                                        topic = 'rpm/sfloc';
+                                        client = new Messaging.Client(hostname, Number(port), clientId);
+                                //建立客户端实例  
+                                var options = {
+                                         timeout: 3,
+                                         userName:'admin',
+                                         password:'password',
+                                         onSuccess: function () {
+				                                         console.log("Connected");
+				                                         client.subscribe(topic);
+				                                 },
+
+				                                 onFailure: function (message) {
+				                                         console.log("Connection failed: " + message.errorMessage);
+				                                 }
+                                };      
+                                //Attempt to connect
+                                client.connect(options);
+                                client.onConnectionLost = onConnectionLost;
+
+                                //注册连接断开处理事件  
+                                client.onMessageArrived = onMessageArrived;
+
+                                //注册消息接收处理事件  
+                                function onConnectionLost(responseObject) {
+                                        console.log(responseObject);
+                                        if (responseObject.errorCode !== 0) {
+                                                console.log("onConnectionLost:" + responseObject.errorMessage);
+                                                console.log("连接已断开");
+                                        }
+                                }
+
+
+                                function onMessageArrived(message) {
+                                        if (message.payloadString != "") {
+                                        var data = JSON.parse(message.payloadString);}
+
+                                        console.log("ID:"+data.UniqueId + " X:" + data.X + " Y:" + data.Y); 
+                                        //clear(oldx,oldy);
+                                                arc.x = data.X;
+                                    						arc.y = data.Y;
+                                                fillText.x = data.X+15;
+                                                fillText.y = data.Y-15;
+                                                fillText.q = data.UniqueId;
+																								fillText1.a = data.X+30;
+                                                fillText1.b = data.Y-15;
+                                                fillText1.c = data.UniqueId;
+
+                                        function init () {                                
+                                          stage = new Stage(ctx1);
+                                          stage.add(fillText);
+                                          stage.add(fillText1);
+
+                                          stage.add(arc);
+                                          
+                                          stage.render();
+                                          
+                                          // change rect position
+                                        }
+
+                                        init();
+                                }
+
+  
+                </script>
+        </body>
+</html>
